@@ -16,20 +16,14 @@ class ScanMenu extends StatefulWidget {
 }
 
 class _ScanMenuState extends State<ScanMenu> {
-  String notificationMessage = "";
-
   final _flashOnController = TextEditingController(text: "Flash ON");
   final _flashOffController = TextEditingController(text: "Flash OFF");
   final _cancelController = TextEditingController(text: "Cancel");
 
   var _aspectTolerance = 0.00;
-  var _numberOfCameras = 0;
   var _selectedCamera = -1;
   var _useAutoFocus = true;
   var _autoEnableFlash = false;
-
-  static final _possibleFormats = BarcodeFormat.values.toList()
-    ..removeWhere((e) => e == BarcodeFormat.unknown);
 
   @override
   initState() {
@@ -67,15 +61,6 @@ class _ScanMenuState extends State<ScanMenu> {
                       style: TextStyle(fontFamily: 'Fira Sans', fontSize: 40),
                     )),
               ),
-              new Text(
-                notificationMessage,
-                style: new TextStyle(
-                    fontFamily: 'Fira Sans',
-                    fontSize: 18.0,
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold
-                ),
-              ),
             ],
           ),
         ),
@@ -83,17 +68,12 @@ class _ScanMenuState extends State<ScanMenu> {
   }
 
   void scan() async {
-    setState(() {
-      notificationMessage = "";
-    });
-
     var options = ScanOptions(
       strings: {
         "cancel": _cancelController.text,
         "flash_on": _flashOnController.text,
         "flash_off": _flashOffController.text,
       },
-      //restrictFormat: selectedFormats,
       useCamera: _selectedCamera,
       autoEnableFlash: _autoEnableFlash,
       android: AndroidOptions(
@@ -110,20 +90,15 @@ class _ScanMenuState extends State<ScanMenu> {
         return;
       }
 
-      setState(() {
-        notificationMessage = 'Unknown error reading barcode: $e';
-      });
+      showNotification("Unknown error reading barcode: $e");
     }
   }
 
   void process(ScanResult barcode) {
     // make sure barcode is valid
     if (barcode == null || barcode.type == ResultType.Error) {
-        setState(() {
-          notificationMessage = "Error reading barcode";
-        });
-
-        return;
+      showNotification("Error reading barcode");
+      return;
     }
 
     if (barcode.type == ResultType.Cancelled) {
@@ -133,16 +108,28 @@ class _ScanMenuState extends State<ScanMenu> {
     var rawBarcode = barcode.rawContent;
 
     if (!validators.isURL(rawBarcode, requireTld: false)) {
-      setState(() {
-        notificationMessage = "Barcode does not contain a valid URL";
-      });
-
+      showNotification("Barcode does not contain a valid URL");
       return;
     }
 
     // TODO: get content type of URL
 
     // TODO: redirect to supported menu parser
+  }
+
+  void showNotification(String message) {
+    final notification = SnackBar(
+      content: Text(
+        message,
+        style: new TextStyle(
+            fontFamily: 'Fira Sans',
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold
+        ),
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(notification);
   }
 }
 

@@ -1,4 +1,4 @@
-# dime
+# DiMe
 
 Digital Menu
 
